@@ -39,20 +39,20 @@ const loginErrAlter = document.getElementById("login-err-alert");
 loginButton.addEventListener("click", (e) => {
     e.preventDefault();
 
-    const email = loginForm.email.value;
+    let email = loginForm.email.value;
     const password = loginForm.password.value;
 
-    fetch('/login', {
-        method: 'POST',
+    fetch("/login", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
-    }).then(response => {
+    }).then((response) => {
         if (response.status === 206) {
-            TwoFAForm.email.value = email;
-            response.json().then(data => {
-                TwoFAForm.login_attempt_id.value = data.loginAttemptId;
+            twoFAForm.email.value = email;
+            response.json().then(({ loginAttemptId }) => {
+                twoFAForm.login_attempt_id.value = loginAttemptId;
             });
 
             loginForm.email.value = "";
@@ -68,10 +68,9 @@ loginButton.addEventListener("click", (e) => {
             loginErrAlter.style.display = "none";
             alert("You have successfully logged in.");
         } else {
-            response.json().then(data => {
-                let error_msg = data.error;
-                if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
-                    loginErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
+            response.json().then(({ error }) => {
+                if (error !== undefined && error !== null && error !== "") {
+                    loginErrAlter.innerHTML = `<span><strong>Error: </strong>${error}</span>`;
                     loginErrAlter.style.display = "block";
                 } else {
                     loginErrAlter.style.display = "none";
@@ -92,13 +91,13 @@ signupButton.addEventListener("click", (e) => {
     const password = signupForm.password.value;
     const requires2FA = signupForm.twoFA.checked;
 
-    fetch('/signup', {
-        method: 'POST',
+    fetch("/signup", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password, requires2FA }),
-    }).then(response => {
+    }).then((response) => {
         if (response.ok) {
             signupForm.email.value = "";
             signupForm.password.value = "";
@@ -109,10 +108,9 @@ signupButton.addEventListener("click", (e) => {
             twoFASection.style.display = "none";
             signupSection.style.display = "none";
         } else {
-            response.json().then(data => {
-                let error_msg = data.error;
-                if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
-                    signupErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
+            response.json().then(({ error }) => {
+                if (error !== undefined && error !== null && error !== "") {
+                    signupErrAlter.innerHTML = `<span><strong>Error: </strong>${error}</span>`;
                     signupErrAlter.style.display = "block";
                 } else {
                     signupErrAlter.style.display = "none";
@@ -122,41 +120,40 @@ signupButton.addEventListener("click", (e) => {
     });
 });
 
-const TwoFAForm = document.getElementById("2fa-form");
-const TwoFAButton = document.getElementById("2fa-form-submit");
-const TwoFAErrAlter = document.getElementById("2fa-err-alert");
+const twoFAForm = document.getElementById("2fa-form");
+const twoFAButton = document.getElementById("2fa-form-submit");
+const twoFAErrAlter = document.getElementById("2fa-err-alert");
 
-TwoFAButton.addEventListener("click", (e) => {
+twoFAButton.addEventListener("click", (e) => {
     e.preventDefault();
 
-    const email = TwoFAForm.email.value;
-    const loginAttemptId = TwoFAForm.login_attempt_id.value;
-    const TwoFACode = TwoFAForm.email_code.value;
+    const email = twoFAForm.email.value;
+    const loginAttemptId = twoFAForm.login_attempt_id.value;
+    const twoFACode = twoFAForm.email_code.value;
 
-    fetch('/verify-2fa', {
-        method: 'POST',
+    fetch("/verify-2fa", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, loginAttemptId, "2FACode": TwoFACode }),
-    }).then(response => {
+        body: JSON.stringify({ email, loginAttemptId, "2FACode": twoFACode }),
+    }).then((response) => {
         if (response.ok) {
-            TwoFAForm.email.value = "";
-            TwoFAForm.email_code.value = "";
-            TwoFAForm.login_attempt_id.value = "";
-            TwoFAErrAlter.style.display = "none";
+            twoFAForm.email.value = "";
+            twoFAForm.email_code.value = "";
+            twoFAForm.login_attempt_id.value = "";
+            twoFAErrAlter.style.display = "none";
             alert("You have successfully logged in.");
             loginSection.style.display = "block";
             twoFASection.style.display = "none";
             signupSection.style.display = "none";
         } else {
-            response.json().then(data => {
-                let error_msg = data.error;
-                if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
-                    TwoFAErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
-                    TwoFAErrAlter.style.display = "block";
+            response.json().then(({ error }) => {
+                if (error !== undefined && error !== null && error !== "") {
+                    twoFAErrAlter.innerHTML = `<span><strong>Error: </strong>${error}</span>`;
+                    twoFAErrAlter.style.display = "block";
                 } else {
-                    TwoFAErrAlter.style.display = "none";
+                    twoFAErrAlter.style.display = "none";
                 }
             });
         }
