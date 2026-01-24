@@ -1,0 +1,6 @@
+flowchart TD
+  A[Incoming HTTP request] --> B[Axum Router]
+  B -->|/hello or /protected| C[Axum handler]
+  B -->|/assets or fallback| D[tower-http ServeDir]
+  C --> E[Response]
+  D --> E[Response]
