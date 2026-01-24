@@ -39,7 +39,7 @@ const loginErrAlter = document.getElementById("login-err-alert");
 loginButton.addEventListener("click", (e) => {
     e.preventDefault();
 
-    let email = loginForm.email.value;
+    const email = loginForm.email.value;
     const password = loginForm.password.value;
 
     fetch("/login", {
