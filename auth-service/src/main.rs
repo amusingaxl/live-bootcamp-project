@@ -1,12 +1,8 @@
-use auth_service::{
-    Application,
-    app_state::AppState,
-    services::user_store::{HashMapUserStore, make_user_store}
-};
+use auth_service::{Application, app_state::AppState, services::HashMapUserStore};
 
 #[tokio::main]
 async fn main() {
-    let user_store = make_user_store(HashMapUserStore::default());
+    let user_store = HashMapUserStore::default();
     let app_state = AppState::new(user_store);
 
     let app = Application::build(app_state, "0.0.0.0:3000")

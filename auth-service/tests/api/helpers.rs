@@ -1,8 +1,4 @@
-use auth_service::{
-    Application,
-    app_state::AppState,
-    services::user_store::{HashMapUserStore, make_user_store},
-};
+use auth_service::{Application, app_state::AppState, services::HashMapUserStore};
 use reqwest::{Client, Response};
 use serde::Serialize;
 use uuid::Uuid;
@@ -14,7 +10,7 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let user_store = make_user_store(HashMapUserStore::default());
+        let user_store = HashMapUserStore::default();
         let app_state = AppState::new(user_store);
 
         let app = Application::build(app_state, "0.0.0.0:0")
@@ -23,7 +19,7 @@ impl TestApp {
 
         let address = format!("http://{}", app.address);
 
-        let _ = tokio::spawn(app.run());
+        std::mem::drop(tokio::spawn(app.run()));
 
         let http_client = Client::new();
 
@@ -35,7 +31,7 @@ impl TestApp {
 
     pub async fn get_root(&self) -> Response {
         self.http_client
-            .get(&format!("{}/", &self.address))
+            .get(format!("{}/", &self.address))
             .send()
             .await
             .expect("Failed to execute request")
@@ -46,7 +42,7 @@ impl TestApp {
         Body: Serialize,
     {
         self.http_client
-            .post(&format!("{}/signup", &self.address))
+            .post(format!("{}/signup", &self.address))
             .json(body)
             .send()
             .await
@@ -55,7 +51,7 @@ impl TestApp {
 
     pub async fn post_login(&self) -> Response {
         self.http_client
-            .post(&format!("{}/login", &self.address))
+            .post(format!("{}/login", &self.address))
             .send()
             .await
             .expect("Failed to execute request")
@@ -63,7 +59,7 @@ impl TestApp {
 
     pub async fn post_logout(&self) -> Response {
         self.http_client
-            .post(&format!("{}/logout", &self.address))
+            .post(format!("{}/logout", &self.address))
             .send()
             .await
             .expect("Failed to execute request")
@@ -71,7 +67,7 @@ impl TestApp {
 
     pub async fn post_verify_2fa(&self) -> Response {
         self.http_client
-            .post(&format!("{}/verify-2fa", &self.address))
+            .post(format!("{}/verify-2fa", &self.address))
             .send()
             .await
             .expect("Failed to execute request")
@@ -79,7 +75,7 @@ impl TestApp {
 
     pub async fn post_verify_token(&self) -> Response {
         self.http_client
-            .post(&format!("{}/verify-token", &self.address))
+            .post(format!("{}/verify-token", &self.address))
             .send()
             .await
             .expect("Failed to execute request")
