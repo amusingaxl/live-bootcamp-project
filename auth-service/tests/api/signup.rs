@@ -1,4 +1,4 @@
-use auth_service::routes::signup::SignupResponse;
+use auth_service::{ErrorResponse, routes::signup::SignupResponse};
 use serde_json::json;
 
 use crate::helpers::{TestApp, get_random_email};
@@ -26,9 +26,79 @@ async fn should_return_201_for_valid_input() {
         response
             .json::<SignupResponse>()
             .await
-            .expect("Could not deserialize response body to UserBody"),
+            .expect("Could not deserialize response body to SignupResponse"),
         expected_response
     );
+}
+
+#[tokio::test]
+async fn should_return_409_if_user_already_exists() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+
+    app.post_signup(&json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": true
+    }))
+    .await;
+
+    let response = app
+        .post_signup(&json!({
+            "email": random_email,
+            "password": "password123",
+            "requires2FA": true
+        }))
+        .await;
+
+    assert_eq!(response.status().as_u16(), 409);
+
+    let expected_response = ErrorResponse {
+        error: "User already exists".to_string(),
+    };
+
+    assert_eq!(
+        response
+            .json::<ErrorResponse>()
+            .await
+            .expect("Could not deserialize response body to SignupResponse"),
+        expected_response
+    )
+}
+
+#[tokio::test]
+async fn should_return_400_if_invalid_credentials() {
+    let app = TestApp::new().await;
+
+    let inputs = [
+        json!({
+            "email": "invalid_email",
+            "password": "password123",
+            "requires2FA": true
+        }),
+        json!({
+            "email": "invalid_password@example",
+            "password": "123",
+            "requires2FA": false
+        }),
+    ];
+
+    for i in inputs.iter() {
+        let response = app.post_signup(i).await;
+        assert_eq!(response.status().as_u16(), 400, "Failed for input: {:?}", i);
+
+        let expected_response = ErrorResponse {
+            error: "Invalid credentials".to_string(),
+        };
+
+        assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse"),
+            expected_response
+        );
+    }
 }
 
 #[tokio::test]
