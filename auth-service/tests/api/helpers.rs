@@ -1,7 +1,11 @@
-use auth_service::Application;
+use auth_service::{
+    Application,
+    app_state::AppState,
+    services::user_store::{HashMapUserStore, make_user_store},
+};
 use reqwest::{Client, Response};
-use uuid::Uuid;
 use serde::Serialize;
+use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
@@ -10,7 +14,10 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let app = Application::build("0.0.0.0:0")
+        let user_store = make_user_store(HashMapUserStore::default());
+        let app_state = AppState::new(user_store);
+
+        let app = Application::build(app_state, "0.0.0.0:0")
             .await
             .expect("Failed to build app");
 
@@ -34,7 +41,10 @@ impl TestApp {
             .expect("Failed to execute request")
     }
 
-    pub async fn post_signup<Body>(&self, body: &Body) -> Response where Body: Serialize {
+    pub async fn post_signup<Body>(&self, body: &Body) -> Response
+    where
+        Body: Serialize,
+    {
         self.http_client
             .post(&format!("{}/signup", &self.address))
             .json(body)
