@@ -3,16 +3,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, User, data_stores::UserStoreError},
+    domain::{AuthAPIError, Email, Password, User, UserStoreError},
 };
 
 pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    request.validate()?;
-
-    let user = User::new(&request.email, &request.password, request.requires_2fa);
+    let user = User::new(
+        Email::parse(&request.email).map_err(map_invalid_input_error)?,
+        Password::parse(&request.password).map_err(map_invalid_input_error)?,
+        request.requires_2fa,
+    );
     let mut user_store = state.user_store.write().await;
 
     user_store
@@ -26,6 +28,10 @@ pub async fn signup(
             message: "Signup successful".to_string(),
         }),
     ))
+}
+
+fn map_invalid_input_error<E>(_err: E) -> AuthAPIError {
+    AuthAPIError::InvalidCredentials
 }
 
 fn map_user_store_error(err: UserStoreError) -> AuthAPIError {
@@ -44,18 +50,6 @@ pub struct SignupRequest {
     pub password: String,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
-}
-
-const MIN_PASSWORD_LENGTH: usize = 8;
-
-impl SignupRequest {
-    pub fn validate(&self) -> Result<(), AuthAPIError> {
-        if !self.email.contains('@') || self.password.len() < MIN_PASSWORD_LENGTH {
-            return Err(AuthAPIError::InvalidCredentials);
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]

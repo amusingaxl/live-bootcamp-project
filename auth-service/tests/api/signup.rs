@@ -112,7 +112,7 @@ async fn should_return_422_if_malformed_input() {
             "requires2FA": true
         }),
         json!({
-                "email": random_email,
+            "email": random_email,
             "requires2FA": true
         }),
     ];
