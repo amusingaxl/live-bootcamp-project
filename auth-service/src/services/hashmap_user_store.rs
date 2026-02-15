@@ -1,29 +1,32 @@
 use std::collections::HashMap;
+use tokio::sync::RwLock;
 
 use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::{Email, Password, User};
 
 #[derive(Default)]
 pub struct HashMapUserStore {
-    users: HashMap<Email, User>,
+    users: RwLock<HashMap<Email, User>>,
 }
 
 #[async_trait::async_trait]
 impl UserStore for HashMapUserStore {
-    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        if self.users.contains_key(&user.email) {
+    async fn add_user(&self, user: User) -> Result<(), UserStoreError> {
+        if self.users.read().await.contains_key(&user.email) {
             return Err(UserStoreError::UserAlreadyExists);
         }
 
-        self.users.insert(user.email.clone(), user);
+        self.users.write().await.insert(user.email.clone(), user);
         Ok(())
     }
 
-    async fn get_user(&self, email: Email) -> Result<&User, UserStoreError> {
-        match self.users.get(&email) {
-            Some(user) => Ok(user),
-            None => Err(UserStoreError::UserNotFound),
-        }
+    async fn get_user(&self, email: Email) -> Result<User, UserStoreError> {
+        self.users
+            .read()
+            .await
+            .get(&email)
+            .cloned()
+            .ok_or(UserStoreError::UserNotFound)
     }
 
     async fn validate_user(&self, email: Email, password: Password) -> Result<(), UserStoreError> {
@@ -42,7 +45,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_user() {
-        let mut user_store = HashMapUserStore::default();
+        let user_store = HashMapUserStore::default();
         let user = User::new(
             Email::parse("email@example").unwrap(),
             Password::parse("password").unwrap(),
@@ -53,7 +56,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_user_already_exists() {
-        let mut user_store = HashMapUserStore::default();
+        let user_store = HashMapUserStore::default();
         let user = User::new(
             Email::parse("email@example").unwrap(),
             Password::parse("password").unwrap(),
@@ -68,14 +71,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let mut user_store = HashMapUserStore::default();
+        let user_store = HashMapUserStore::default();
         let email = Email::parse("email@example").unwrap();
         let password = Password::parse("password").unwrap();
         let user = User::new(email.clone(), password.clone(), true);
         assert!(user_store.add_user(user.clone()).await.is_ok());
 
         let inserted_user = user_store.get_user(email).await.unwrap();
-        assert_eq!(inserted_user, &user);
+        assert_eq!(inserted_user, user);
     }
 
     #[tokio::test]
@@ -90,7 +93,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_user() {
-        let mut user_store = HashMapUserStore::default();
+        let user_store = HashMapUserStore::default();
         let email = Email::parse("email@example").unwrap();
         let password = Password::parse("password").unwrap();
         let user = User::new(email.clone(), password.clone(), true);
@@ -101,7 +104,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_user_invalid_credentials() {
-        let mut user_store = HashMapUserStore::default();
+        let user_store = HashMapUserStore::default();
         let email = Email::parse("email@example").unwrap();
         let password = Password::parse("password").unwrap();
         let user = User::new(email.clone(), password, true);

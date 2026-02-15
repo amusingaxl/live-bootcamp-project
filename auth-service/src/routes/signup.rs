@@ -15,9 +15,9 @@ pub async fn signup(
         Password::parse(&request.password).map_err(map_invalid_input_error)?,
         request.requires_2fa,
     );
-    let mut user_store = state.user_store.write().await;
 
-    user_store
+    state
+        .user_store
         .add_user(user)
         .await
         .map_err(map_user_store_error)?;
