@@ -1,12 +1,16 @@
 ## Setup & Building
 ```bash
 cargo install cargo-watch
-cd app-service
 cargo build
-cd ..
-cd auth-service
-cargo build
-cd ..
+cargo test
+```
+
+You can also run commands for one service at a time:
+```bash
+cargo test -p app-service
+cargo test -p auth-service
+cargo run -p app-service
+cargo run -p auth-service
 ```
 
 ## Run servers locally (Manually)
